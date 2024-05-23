@@ -1,11 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../connection'); 
+const connection = require('../connection');
 
-
-router.delete('/blogDelete/:title', (req, res) => {
-  const { title } = req.params; 
-
+router.delete('/blogDelete/:title', async (req, res) => {
+  const { title } = req.params;
 
   const query = `
     DELETE FROM blogsData
@@ -13,22 +11,18 @@ router.delete('/blogDelete/:title', (req, res) => {
   `;
   const values = [title];
 
- 
-  connection.query(query, values, (queryErr, result) => {
-    if (queryErr) {
-      console.error('Error executing delete query:', queryErr);
-      res.status(500).json({ error: 'Internal server error' });
-      return;
-    }
+  try {
+    const [result] = await connection.execute(query, values);
 
-   
     if (result.affectedRows === 0) {
-      res.status(404).json({ error: 'Blog entry not found' });
-      return;
+      return res.status(404).json({ error: 'Blog entry not found' });
     }
 
     res.status(200).json({ message: 'Blog entry deleted successfully' });
-  });
+  } catch (error) {
+    console.error('Error executing delete query:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 module.exports = router;
